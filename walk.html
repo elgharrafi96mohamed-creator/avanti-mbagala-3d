@@ -748,17 +748,23 @@ function init(){const V=window.__V,main=document.getElementById('main');
  const rooms=V.D.rooms.filter(r=>{let a=0;const p=r.poly;for(let i=0;i<p.length;i++){const q=p[(i+1)%p.length];a+=p[i][0]*q[1]-q[0]*p[i][1]}return Math.abs(a/2)>=7});
  const FN={G:'Ground floor','1':'1st floor','2':'2nd floor'};
  let T=null,idx=0,mode=null,spin=null;
- function stop(){if(T)clearTimeout(T);T=null;if(spin)cancelAnimationFrame(spin);spin=null;mode=null;cap.style.display='none';pr.style.width='0';
+ let stop=function(){if(T)clearTimeout(T);T=null;if(spin)cancelAnimationFrame(spin);spin=null;mode=null;cap.style.display='none';pr.style.width='0';
   document.getElementById('tour').textContent='▶ Guided tour';document.getElementById('wtour').textContent='🚶 Walk-through tour';V.ctl.autoRotate=false}
  function show(t,i,n){cap.innerHTML=t;cap.style.display='block';pr.style.width=(100*(i+1)/n)+'%'}
  const steps=[{t:'The whole factory',f:()=>V.buildingView(),ms:8000}];
  for(const f of ['G','1','2']){steps.push({t:FN[f],f:()=>V.selectFloor(f),ms:5000});for(const r of rooms.filter(r=>r.f===f))steps.push({t:FN[f]+' · '+r.name,f:()=>V.selectRoom(r),ms:5500})}
  function runTour(){if(mode!=='tour')return;const s=steps[idx%steps.length];show(s.t,idx%steps.length,steps.length);s.f();idx++;T=setTimeout(runTour,s.ms)}
  document.getElementById('tour').onclick=()=>{if(mode==='tour'){stop();return}stop();if(V.walk.on)V.exitWalk();mode='tour';idx=0;document.getElementById('tour').textContent='⏸ Stop tour';runTour()};
- function runWalk(){if(mode!=='walk')return;const r=rooms[idx%rooms.length];show('Walking · '+FN[r.f]+' · '+r.name,idx%rooms.length,rooms.length);V.selectRoom(r);idx++;T=setTimeout(runWalk,7000)}
- function turn(){if(mode!=='walk')return;V.walk.yaw+=0.0035;spin=requestAnimationFrame(turn)}
+ const wrooms=rooms.filter(r=>{let a=0;const p=r.poly;for(let i=0;i<p.length;i++){const q=p[(i+1)%p.length];a+=p[i][0]*q[1]-q[0]*p[i][1]}return Math.abs(a/2)>=12});
+ function walkTo(r){const p=r.poly;const cx=p.reduce((s,q)=>s+q[0],0)/p.length,cy=p.reduce((s,q)=>s+q[1],0)/p.length;
+  let v=p[0],dm=0;for(const q of p){const d=Math.hypot(q[0]-cx,q[1]-cy);if(d>dm){dm=d;v=q}}
+  const sx=cx+(cx-v[0])*0.45,sy=cy+(cy-v[1])*0.45;V.placeAt(r.f,sx,sy);const P=V.walk.pos;
+  V.walk.yaw=Math.atan2(-(v[0]-P.x),-(v[1]-P.z));V.walk.pitch=-0.04;V.walk.room=null}
+ let t0=0;function runWalk(){if(mode!=='walk')return;const r=wrooms[idx%wrooms.length];show('Walking · '+FN[r.f]+' · '+r.name,idx%wrooms.length,wrooms.length);walkTo(r);t0=performance.now();idx++;T=setTimeout(runWalk,8000)}
+ function turn(){if(mode!=='walk')return;const k=(performance.now()-t0)/1000;V.walk.joy.y=k<6?-0.32:0;V.walk.yaw+=Math.sin(k*0.9)*0.0016;spin=requestAnimationFrame(turn)}
+ const _stop=stop;stop=function(){V.walk.joy.y=0;_stop()};
  document.getElementById('wtour').onclick=()=>{if(mode==='walk'){stop();return}stop();mode='walk';idx=0;document.getElementById('wtour').textContent='⏸ Stop walking';
-  if(!V.walk.on)V.enterWalk(rooms[0]);runWalk();turn()};
+  if(!V.walk.on)V.enterWalk(wrooms[0]);runWalk();turn()};
  // stop tours when the user takes control
  const cv=document.getElementById('c');['pointerdown','wheel'].forEach(ev=>cv.addEventListener(ev,()=>{if(mode)stop()},{passive:true}));
  addEventListener('keydown',e=>{if(mode&&e.code!=='Space')stop()});
