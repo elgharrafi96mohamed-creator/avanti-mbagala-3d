@@ -755,7 +755,7 @@ function init(){const V=window.__V,main=document.getElementById('main');
  for(const f of ['G','1','2']){steps.push({t:FN[f],f:()=>V.selectFloor(f),ms:5000});for(const r of rooms.filter(r=>r.f===f))steps.push({t:FN[f]+' · '+r.name,f:()=>V.selectRoom(r),ms:5500})}
  function runTour(){if(mode!=='tour')return;const s=steps[idx%steps.length];show(s.t,idx%steps.length,steps.length);s.f();idx++;T=setTimeout(runTour,s.ms)}
  document.getElementById('tour').onclick=()=>{if(mode==='tour'){stop();return}stop();if(V.walk.on)V.exitWalk();mode='tour';idx=0;document.getElementById('tour').textContent='⏸ Stop tour';runTour()};
- const wrooms=rooms.filter(r=>{let a=0;const p=r.poly;for(let i=0;i<p.length;i++){const q=p[(i+1)%p.length];a+=p[i][0]*q[1]-q[0]*p[i][1]}return Math.abs(a/2)>=12});
+ const wrooms=rooms.filter(r=>{let a=0;const p=r.poly;for(let i=0;i<p.length;i++){const q=p[(i+1)%p.length];a+=p[i][0]*q[1]-q[0]*p[i][1]}return Math.abs(a/2)>=30});
  function walkTo(r){const p=r.poly;const cx=p.reduce((s,q)=>s+q[0],0)/p.length,cy=p.reduce((s,q)=>s+q[1],0)/p.length;
   let v=p[0],dm=0;for(const q of p){const d=Math.hypot(q[0]-cx,q[1]-cy);if(d>dm){dm=d;v=q}}
   const sx=cx+(cx-v[0])*0.45,sy=cy+(cy-v[1])*0.45;V.placeAt(r.f,sx,sy);const P=V.walk.pos;
